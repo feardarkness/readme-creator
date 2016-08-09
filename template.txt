@@ -1,0 +1,208 @@
+# Servicio Proxy __SERVICE_NAME__
+
+### Instalación (Development)
+
+Los pasos para instalar el proxy son los siguientes (*Guia de instalación para Debian Jessie*):
+1. Instalar librerias adicionales:
+  ```
+  sudo apt-get install -y build-essential
+  ```
+1. Instalar nodejs:
+  ```
+  sudo apt-get install nodejs
+  ```
+1. Instalar npm:
+  ```
+  sudo apt-get install npm
+  ```
+1. Instalar n(para manejar las versiones de nodejs):
+  ```
+  sudo npm install -g n
+  ```
+1. Instalar la versión 5.5.0 de nodejs:
+  ```
+  sudo n 5.5.0
+  ```
+1. Seleccionar la versión 5 como la versión activa
+  ```
+  sudo n
+  ```
+  En la pantalla que aparecerá, con las teclas de dirección(flechas), posicionarse sobre la versión 5.5.0 y presionar enter.
+1. Se debe establecer el **ambiente** (development, test), para esto, editar el archivo */etc/environment* agregandole la siguiente linea:
+  ```
+  NODE_ENV=development
+  ```
+**Importante**: Luego de aplicar los cambios, es necesario volver a loguear.  
+1. Instalar las dependencias de node:
+  ```
+  npm install
+  ```
+1. Para iniciar la aplicación:
+  ```
+  npm start
+  ```
+
+#### Instalación (Production)
+
+Los pasos para instalar el sistema son los siguientes (*Guia de instalación para Debian Jessie*):
+1. Instalar librerias adicionales:
+  ```
+  sudo apt-get install -y build-essential
+  ```
+1. Instalar nodejs:
+  ```
+  sudo apt-get install nodejs
+  ```
+1. Instalar npm:
+  ```
+  sudo apt-get install npm
+  ```
+1. Instalar n(para manejar las versiones de nodejs):
+  ```
+  sudo npm install -g n
+  ```
+1. Instalar la versión 5.5.0 de nodejs:
+  ```
+  sudo n 5.5.0
+  ```
+1. Seleccionar la versión 5 como la versión activa
+  ```
+  sudo n
+  ```
+  En la pantalla que aparecerá, con las teclas de dirección(flechas), posicionarse sobre la versión 5.5.0 y presionar enter.
+1. Se debe establecer el **ambiente** (production), para esto, editar el archivo */etc/environment* agregandole la siguiente linea:
+  ```
+  NODE_ENV=production
+  ```
+**Importante**: Luego de aplicar los cambios, es necesario volver a loguear.
+1. Instalar las dependencias de node:
+  ```
+  npm install
+  ```
+1. Ahora, se instalara nginx con passenger para servir la aplicación en producción. Para mayor información, revisar:
+[Documentación de Nginx](https://www.nginx.com/resources/wiki/ "NGINX"), [Documentación de Passenger](https://www.phusionpassenger.com/documentation_and_support "Passenger").
+
+  1. Instalar la llave para passenger:
+  ```
+  sudo apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys 561F9B9CAC40B2F7
+  ```
+  1. Activar ssh para apt:
+  ```
+  sudo apt-get install -y apt-transport-https ca-certificates
+  ```
+  1. Agregar repositorio de passenger:
+  ```
+  sudo sh -c 'echo deb https://oss-binaries.phusionpassenger.com/apt/passenger jessie main > /etc/apt/sources.list.d/passenger.list'
+  ```
+  1. Actualizar:
+  ```
+  sudo apt-get update
+  ```
+  1. instalar
+  ```
+  sudo apt-get install -y --force-yes nginx-extras passenger
+  ```
+  1. Configurar nginx para habilitar passenger, se debe modificar el archivo /etc/nginx/nginx.conf, y descomentar o agregar las lineas que contienen *passenger_root* y *passenger_ruby*.
+  El archivo debe contener las siguientes lineas descomentadas (las rutas podrian ser diferentes de acuerdo a la versión):
+  ```
+  passenger_root /some-filename/locations.ini;
+  passenger_ruby /usr/bin/passenger_free_ruby;
+  ```
+  Además, agregar la siguiente linea despues de passenger_ruby:
+  ```
+  passenger_nodejs /usr/local/bin/node;
+  ```
+  1. Para verificar que se haya configurado correctamente, revisar:
+    - Si todo esta correcto, el siguiente comando devolvera *Everything looks good*:
+    ```
+    sudo /usr/bin/passenger-config validate-install
+    ```
+    - No debe mostrar errores:
+    ```
+    sudo /usr/sbin/passenger-memory-stats
+    ```
+
+  1. Crear un archivo para la aplicación en /etc/nginx/sites-enabled/ con el nombre __service_name__.conf, agregar el siguiente contenido (*Cambiar servidor.com por el dominio o la ip del servidor*):
+    ```
+    server {
+        listen 80;
+        server_name servidor.com;
+
+        # Tell Nginx and Passenger where your app's 'public' directory is
+        root /var/www/__service_name__/public;
+
+        # Turn on Passenger
+        passenger_enabled on;
+        # Tell Passenger that your app is a Node.js app
+        passenger_app_type node;
+        passenger_startup_file bin/www;
+    }
+    ```
+
+  1. Ahora para reiniciar el servicio con las configuraciones, anotar:
+  ```
+  sudo  service nginx restart
+  ```
+1. Ahora ingresar a la carpeta raiz del proyecto y ejecutar:
+```
+sudo npm run clean-compilation
+```
+luego, ejecutar:
+```
+sudo npm run compile
+```
+1. Ahora, copiar la carpeta *build* del proyecto a la ruta */var/www* y renombrar la carpeta a *__service_name__*
+
+### Habilitar https
+1. Para habilitar https, se necesita obtener el certificado del servidor y la llave privada.
+2. Modificar la configuración de nginx para dejar de escuchar en el puerto 80, y comenzar a escuchar en el puerto 443. Además, se debe agregar en la configuración la ubicación del certificado y de la llave privada. Se debe modificar el archivo **/etc/nginx/sites-enabled/__service_name__.conf** de la siguiente manera:
+```
+server {
+    #listen 80;    se comenta el puerto 80
+
+    # se agrega el puerto 443
+    listen 443 ssl;
+
+    server_name servidor.com;
+
+    # certificado del servidor
+    ssl_certificate /ruta/certificado/servidor/server.crt;
+    # ubicacion de la llave del certificado
+    ssl_certificate_key /ruta/llave/servidor/server.key;
+
+    #... las demás configuraciones no deben modificarse
+```
+
+### Opciones adicionales (Para desarrollo)
+Las opciones de ejecucion son las siguientes:
+  - **npm start** inicia el sitio en el puerto configurado
+  - **npm test**  ejecuta las pruebas unitarias de la aplicación (No es necesario que el servidor este levantado)
+  - **npm run lint**  ejecuta el eslint para verificar el estandar de programación, actualmente esta basado en: https://github.com/airbnb/javascript
+  - **npm run apidoc**  genera la documentación de la API
+  - **npm run clean-compilation**  elimina la carpeta build
+  - **npm run compile** transpila el código y crea una carpeta build
+
+### Configuración del servicio de __service_name__
+Se debe modificar los datos de consumo del servicio de __SERVICE_NAME__ en el archivo libs/config.ambiente.js de acuerdo al ambiente configurado en la Instalación, un ejemplo de configuración para el ambiente de desarrollo (archivo **config.development.js**) es:
+```
+module.exports = {
+    baseUrl: `/__service_name__`,
+    force: false,
+    servicio :{
+      __service_name__ : {
+        url:"http://10.1.18.109/movil/api.asmx?wsdl",
+      },
+    },
+};
+```
+
+### Consideraciones al momento de realizar los test
+Debido a que el consumo de los servicios se realiza en línea, los tiempos de respuesta pueden variar mucho dependiendo de la velocidad de internet, por lo cuál algunos tests pueden tener un timeout. Realizar las pruebas varias veces para asegurarse que un error es constante.
+
+## Ver la documentación de la API
+La documentación, que se puede ver online y offline, se genera con **npm run apidoc** y se encuentra en:
+```url
+[ruta-del-proyecto]/public/apidoc/index.html
+```
+## NOTA
+El servicio web necesita previamente tener configurada la VPN con __SERVICE_NAME__, para eso instalar previamente **Cisco Anyconnect** y solicitar las credenciales necesarias.

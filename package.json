@@ -1,0 +1,29 @@
+{
+  "name": "readme-creator",
+  "version": "0.0.1",
+  "description": "Create readme fies for web services",
+  "preferGlobal": true,
+  "bin": {
+    "create-readme": "index.js"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/feardarkness/readme-creator.git"
+  },
+  "keywords": [
+    "readme",
+    "easy"
+  ],
+  "author": "Yop",
+  "license": "GPL-3.0",
+  "bugs": {
+    "url": "https://github.com/feardarkness/readme-creator/issues"
+  },
+  "homepage": "https://github.com/feardarkness/readme-creator#readme",
+  "dependencies": {
+    "prompt": "^1.0.0"
+  }
+}
